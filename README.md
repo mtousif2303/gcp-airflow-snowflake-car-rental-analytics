@@ -77,7 +77,7 @@ This project demonstrates a comprehensive **batch data processing pipeline** for
 This guide demonstrates an end-to-end data engineering pipeline that processes daily car rental transactions using Apache Airflow, Google Cloud Dataproc (Spark), and Snowflake. The pipeline implements Slowly Changing Dimensions (SCD Type 2) for customer data and creates a star schema for analytics.
 
 
-The Airflow Dag pipeline
+ # The Airflow Dag pipeline
 
 <img width="2886" height="1750" alt="image" src="https://github.com/user-attachments/assets/60836f94-9332-450d-aebf-3f43f13047ac" />
 
