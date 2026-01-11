@@ -26,39 +26,6 @@ This project demonstrates a comprehensive **batch data processing pipeline** for
 - **☁️ Cloud Integration**: Google Cloud Storage and Dataproc integration
 - **❄️ Snowflake Analytics**: Data warehouse with dimensional modeling
 
-The Airflow Dag pipeline
-
-<img width="2886" height="1750" alt="image" src="https://github.com/user-attachments/assets/60836f94-9332-450d-aebf-3f43f13047ac" />
-
-
-a) GCS Bucket data and spark Job 
-
-<img width="3030" height="1756" alt="image" src="https://github.com/user-attachments/assets/1514a95c-6b3d-4d87-b8d6-52131ed30f20" />
-
-b) Upload the Jar files 
-
-<img width="3094" height="1606" alt="image" src="https://github.com/user-attachments/assets/ce5addb2-f766-4488-98a0-90ebbfb8d0f3" />
-
-c) Then upload the spark Job
-
-<img width="3110" height="1576" alt="image" src="https://github.com/user-attachments/assets/25ae8141-5d8b-40fb-a40e-e3c0f0c5b5c1" />
-
-d) The the upload the car_rental_airflow_dag.py 
-
-<img width="3082" height="1702" alt="image" src="https://github.com/user-attachments/assets/52f7cc2f-65ff-4995-8e87-66df0a3f5840" />
-
-e) Snowflake data warehouse the tables are merged and created the rent fact table
-
-<img width="2948" height="1760" alt="image" src="https://github.com/user-attachments/assets/64c64f11-c000-44b5-81ed-447d8ac3fa61" />
-
-
-
-# Car Rental Data Pipeline - Complete Setup & Implementation Guide
-
-## 📋 Project Overview
-
-This guide demonstrates an end-to-end data engineering pipeline that processes daily car rental transactions using Apache Airflow, Google Cloud Dataproc (Spark), and Snowflake. The pipeline implements Slowly Changing Dimensions (SCD Type 2) for customer data and creates a star schema for analytics.
-
 ---
 
 ## 🏗️ Architecture
@@ -108,6 +75,34 @@ This guide demonstrates an end-to-end data engineering pipeline that processes d
 ```
 
 ---
+
+This guide demonstrates an end-to-end data engineering pipeline that processes daily car rental transactions using Apache Airflow, Google Cloud Dataproc (Spark), and Snowflake. The pipeline implements Slowly Changing Dimensions (SCD Type 2) for customer data and creates a star schema for analytics.
+
+
+The Airflow Dag pipeline
+
+<img width="2886" height="1750" alt="image" src="https://github.com/user-attachments/assets/60836f94-9332-450d-aebf-3f43f13047ac" />
+
+a) GCS Bucket data and spark Job 
+
+<img width="3030" height="1756" alt="image" src="https://github.com/user-attachments/assets/1514a95c-6b3d-4d87-b8d6-52131ed30f20" />
+
+b) Upload the Jar files 
+
+<img width="3094" height="1606" alt="image" src="https://github.com/user-attachments/assets/ce5addb2-f766-4488-98a0-90ebbfb8d0f3" />
+
+c) Then upload the spark Job
+
+<img width="3110" height="1576" alt="image" src="https://github.com/user-attachments/assets/25ae8141-5d8b-40fb-a40e-e3c0f0c5b5c1" />
+
+d) The the upload the car_rental_airflow_dag.py 
+
+<img width="3082" height="1702" alt="image" src="https://github.com/user-attachments/assets/52f7cc2f-65ff-4995-8e87-66df0a3f5840" />
+
+e) Snowflake data warehouse the tables are merged and created the rent fact table
+
+<img width="2948" height="1760" alt="image" src="https://github.com/user-attachments/assets/64c64f11-c000-44b5-81ed-447d8ac3fa61" />
+
 
 ## 📦 Step A: Organize GCS Bucket Structure
 
