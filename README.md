@@ -6,51 +6,7 @@ End-to-end data pipeline built with Apache Airflow, Apache Spark (GCP Dataproc),
 
 ## 📋 Project Overview
 
-This project demonstrates a comprehensive **batch data processing pipeline** for car rental analytics using **Apache Airflow**, **Google Cloud Dataproc**, **Apache Spark**, and **Snowflake**. The pipeline processes daily car rental transaction data and implements **SCD Type 2** (Slowly Changing Dimension) for customer data management.
-
-## 🏗️ Architecture
-
-┌─────────────────────────────────────────────────────────────────┐
-│                     Google Cloud Storage                        │
-│  ┌──────────────────┐  ┌──────────────┐  ┌─────────────────┐  │
-│  │  Raw JSON Data   │  │  Spark Job   │  │  Snowflake JARs │  │
-│  └────────┬─────────┘  └──────┬───────┘  └────────┬────────┘  │
-└───────────┼────────────────────┼──────────────────┼────────────┘
-            │                    │                   │
-            ▼                    ▼                   ▼
-    ┌───────────────────────────────────────────────────┐
-    │            Apache Airflow (Orchestration)         │
-    │  ┌──────────┐  ┌──────────┐  ┌───────────────┐  │
-    │  │ Get Date │→ │ Merge    │→ │ Insert        │  │
-    │  │          │  │ Customer │  │ Customer      │  │
-    │  └──────────┘  └──────────┘  └───────┬───────┘  │
-    │                                       │          │
-    │                          ┌────────────▼───────┐  │
-    │                          │ Submit PySpark Job │  │
-    │                          └────────┬───────────┘  │
-    └──────────────────────────────────┼──────────────┘
-                                       │
-                                       ▼
-                        ┌──────────────────────────┐
-                        │   Dataproc Cluster       │
-                        │   (Spark Processing)     │
-                        └──────────┬───────────────┘
-                                   │
-                                   ▼
-                        ┌──────────────────────────┐
-                        │   Snowflake DWH          │
-                        │  ┌──────────────────┐    │
-                        │  │ Dimension Tables │    │
-                        │  │  - Customer      │    │
-                        │  │  - Car           │    │
-                        │  │  - Location      │    │
-                        │  │  - Date          │    │
-                        │  └─────────┬────────┘    │
-                        │            │             │
-                        │  ┌─────────▼────────┐    │
-                        │  │  Rentals Fact    │    │
-                        │  └──────────────────┘    │
-                        └──────────────────────────┘
+This project demonstrates a comprehensive **batch data processing pipeline** for car rental analytics using **Apache Airflow**, **Google Cloud Dataproc**, **Apache Spark**, and **Snowflake**. The pipeline processes daily car rent
 
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐    ┌─────────────────┐
@@ -97,277 +53,815 @@ e) Snowflake data warehouse the tables are merged and created the rent fact tabl
 
 
 
-## 📁 Project Structure
+# Car Rental Data Pipeline - Complete Setup & Implementation Guide
+
+## 📋 Project Overview
+
+This guide demonstrates an end-to-end data engineering pipeline that processes daily car rental transactions using Apache Airflow, Google Cloud Dataproc (Spark), and Snowflake. The pipeline implements Slowly Changing Dimensions (SCD Type 2) for customer data and creates a star schema for analytics.
+
+---
+
+## 🏗️ Architecture
 
 ```
-Car-Rental-Batch-Ingestion-Project/
-├── airflow_job/
-│   └── car_rental_airflow_dag.py          # Airflow DAG for orchestration
-├── spark_job/
-│   └── spark_job.py                       # PySpark data processing job
-├── data/
-│   ├── car_rental_20250903.json          # Sample rental data (Sept 3, 2025)
-│   ├── car_rental_20250904.json          # Sample rental data (Sept 4, 2025)
-│   ├── customers_20250903.csv            # Customer data (Sept 3, 2025)
-│   └── customers_20250904.csv            # Customer data (Sept 4, 2025)
-├── jar_files/
-│   ├── snowflake-jdbc-3.16.0.jar         # Snowflake JDBC connector
-│   └── spark-snowflake_2.12-2.15.0-spark_3.4.jar  # Spark-Snowflake connector
-├── snowflake_dwh_setup.sql               # Data warehouse setup script
-└── README.md                             # This documentation
+┌─────────────────────────────────────────────────────────────────┐
+│                     Google Cloud Storage                        │
+│  ┌──────────────────┐  ┌──────────────┐  ┌─────────────────┐  │
+│  │  Raw JSON Data   │  │  Spark Job   │  │  Snowflake JARs │  │
+│  └────────┬─────────┘  └──────┬───────┘  └────────┬────────┘  │
+└───────────┼────────────────────┼──────────────────┼────────────┘
+            │                    │                   │
+            ▼                    ▼                   ▼
+    ┌───────────────────────────────────────────────────┐
+    │            Apache Airflow (Orchestration)         │
+    │  ┌──────────┐  ┌──────────┐  ┌───────────────┐  │
+    │  │ Get Date │→ │ Merge    │→ │ Insert        │  │
+    │  │          │  │ Customer │  │ Customer      │  │
+    │  └──────────┘  └──────────┘  └───────┬───────┘  │
+    │                                       │          │
+    │                          ┌────────────▼───────┐  │
+    │                          │ Submit PySpark Job │  │
+    │                          └────────┬───────────┘  │
+    └──────────────────────────────────┼──────────────┘
+                                       │
+                                       ▼
+                        ┌──────────────────────────┐
+                        │   Dataproc Cluster       │
+                        │   (Spark Processing)     │
+                        └──────────┬───────────────┘
+                                   │
+                                   ▼
+                        ┌──────────────────────────┐
+                        │   Snowflake DWH          │
+                        │  ┌──────────────────┐    │
+                        │  │ Dimension Tables │    │
+                        │  │  - Customer      │    │
+                        │  │  - Car           │    │
+                        │  │  - Location      │    │
+                        │  │  - Date          │    │
+                        │  └─────────┬────────┘    │
+                        │            │             │
+                        │  ┌─────────▼────────┐    │
+                        │  │  Rentals Fact    │    │
+                        │  └──────────────────┘    │
+                        └──────────────────────────┘
 ```
 
-## 🗄️ Data Model
+---
 
-### **Dimensional Model (Star Schema)**
+## 📦 Step A: Organize GCS Bucket Structure
 
-#### **Dimension Tables:**
-- **`location_dim`**: Airport/city locations (10 locations)
-- **`car_dim`**: Vehicle information (10 car models)
-- **`date_dim`**: Calendar dates (September 2025)
-- **`customer_dim`**: Customer data with SCD Type 2 support
+### Purpose
+Google Cloud Storage serves as the data lake for raw input files, processing scripts, and required dependencies.
 
-#### **Fact Table:**
-- **`rentals_fact`**: Daily rental transactions with foreign keys to all dimensions
+### Folder Structure
 
-### **SCD Type 2 Implementation:**
-- **`effective_date`**: When the record became active
-- **`end_date`**: When the record was superseded (NULL for current)
-- **`is_current`**: Boolean flag for current records
-
-## 🔧 Technical Components
-
-### **1. Apache Airflow DAG (`car_rental_airflow_dag.py`)**
-
-**Features:**
-- **Parameterized Execution**: Accepts date parameter (yyyymmdd format)
-- **SCD2 Logic**: Handles customer dimension updates
-- **Task Dependencies**: Sequential execution with proper ordering
-- **Error Handling**: Retry logic and failure notifications
-
-**Task Flow:**
 ```
-get_execution_date → merge_customer_dim → insert_customer_dim → submit_pyspark_job
+gs://snowflake-projects--gds-de/
+│
+├── 📁 car_rental_data/
+│   └── 📁 car_rental_daily_data/
+│       ├── 📄 car_rental_20260110.json
+│       ├── 📄 car_rental_20260111.json
+│       ├── 📄 car_rental_20260112.json
+│       └── 📄 ... (daily incremental files)
+│
+├── 📁 car_rental_spark_job/
+│   └── 📄 spark_job.py
+│
+└── 📁 snowflake_jars/
+    ├── 📄 spark-snowflake_2.12-2.15.0-spark_3.4.jar
+    └── 📄 snowflake-jdbc-3.16.0.jar
 ```
 
-**Key Tasks:**
-- **`get_execution_date`**: Resolves execution date from parameters
-- **`merge_customer_dim`**: Closes out changed customer records (SCD2)
-- **`insert_customer_dim`**: Inserts new customer versions
-- **`submit_pyspark_job`**: Triggers Spark job for fact table processing
+### Implementation Steps
 
-### **2. PySpark Job (`spark_job.py`)**
-
-**Data Processing Pipeline:**
-1. **Data Ingestion**: Reads JSON files from GCS
-2. **Data Validation**: Filters out incomplete records
-3. **Data Transformation**: Calculates derived fields
-4. **Dimension Joins**: Enriches data with surrogate keys
-5. **Fact Table Load**: Writes processed data to Snowflake
-
-**Key Transformations:**
-- **Rental Duration**: Calculates days between start and end dates
-- **Total Amount**: Multiplies amount by quantity
-- **Daily Average**: Calculates average daily rental cost
-- **Long Rental Flag**: Identifies rentals > 7 days
-
-### **3. Snowflake Data Warehouse (`snowflake_dwh_setup.sql`)**
-
-**Setup Components:**
-- **Database Creation**: `car_rental` database
-- **Table Definitions**: All dimension and fact tables
-- **Sample Data**: Pre-populated dimension data
-- **Storage Integration**: GCS integration for file access
-- **External Stage**: Stage for customer CSV files
-
-## 🚀 Getting Started
-
-### **Prerequisites:**
-- Google Cloud Platform account
-- Snowflake account with appropriate permissions
-- Apache Airflow environment
-- Google Cloud Dataproc cluster
-
-### **Setup Steps:**
-
-#### **1. Snowflake Setup:**
-```sql
--- Run the data warehouse setup script
--- File: snowflake_dwh_setup.sql
-```
-
-#### **2. GCS Data Upload:**
+**1. Create the bucket (if not exists):**
 ```bash
-# Upload sample data files to GCS bucket
-gsutil cp data/*.json gs://your-bucket/car_rental_data/car_rental_daily_data/
-gsutil cp data/*.csv gs://your-bucket/car_rental_data/customer_daily_data/
+gsutil mb -p project-040088dd-8c9a-464e-96f \
+  -c STANDARD \
+  -l us-central1 \
+  gs://snowflake-projects--gds-de/
 ```
 
-#### **3. Airflow Configuration:**
-- Update connection details in `car_rental_airflow_dag.py`
-- Configure Snowflake connection in Airflow
-- Set up GCP service account permissions
-
-#### **4. Dataproc Setup:**
-- Create Dataproc cluster: `hadoop-dev-new`
-- Upload Spark job to GCS
-- Configure JAR files in GCS
-
-### **Execution:**
-
-#### **Manual Trigger:**
+**2. Create folder structure:**
 ```bash
-# Trigger DAG with specific date
-airflow dags trigger car_rental_data_pipeline --conf '{"execution_date": "20250903"}'
+# Create directories
+gsutil mkdir gs://snowflake-projects--gds-de/car_rental_data/
+gsutil mkdir gs://snowflake-projects--gds-de/car_rental_data/car_rental_daily_data/
+gsutil mkdir gs://snowflake-projects--gds-de/car_rental_spark_job/
+gsutil mkdir gs://snowflake-projects--gds-de/snowflake_jars/
 ```
 
-#### **Programmatic Execution:**
-```python
-# Direct Spark job execution
-python spark_job.py --date 20250903
+**3. Upload sample data file:**
+```bash
+# Upload your daily JSON file
+gsutil cp car_rental_20260111.json \
+  gs://snowflake-projects--gds-de/car_rental_data/car_rental_daily_data/
 ```
 
-## 📊 Sample Data
+### Raw Data Format
 
-### **Rental Data Structure:**
+**File:** `car_rental_20260111.json`
 ```json
-{
-    "rental_id": "RNTL001",
-    "customer_id": "CUST001",
+[
+  {
+    "rental_id": "R20260111001",
+    "customer_id": "C1001",
     "car": {
-        "make": "Tesla",
-        "model": "Model S",
-        "year": 2022
+      "make": "Toyota",
+      "model": "Camry",
+      "year": 2023
     },
     "rental_period": {
-        "start_date": "2025-09-02",
-        "end_date": "2025-09-08"
+      "start_date": "2026-01-11",
+      "end_date": "2026-01-15"
     },
     "rental_location": {
-        "pickup_location": "New York - JFK Airport",
-        "dropoff_location": "Denver - DEN Airport"
+      "pickup_location": "LAX Airport",
+      "dropoff_location": "LAX Airport"
     },
-    "amount": 255.21,
+    "amount": 89.99,
     "quantity": 1
+  },
+  {
+    "rental_id": "R20260111002",
+    "customer_id": "C1002",
+    "car": {
+      "make": "Honda",
+      "model": "Accord",
+      "year": 2024
+    },
+    "rental_period": {
+      "start_date": "2026-01-11",
+      "end_date": "2026-01-18"
+    },
+    "rental_location": {
+      "pickup_location": "Downtown LA",
+      "dropoff_location": "LAX Airport"
+    },
+    "amount": 79.99,
+    "quantity": 1
+  }
+]
+```
+
+### Best Practices
+- **Naming Convention**: Use `YYYYMMDD` format for date-based partitioning
+- **File Format**: JSON multiline array for easy Spark processing
+- **Incremental Loading**: Each file represents one day's transactions
+- **Data Validation**: Ensure all mandatory fields are present before upload
+
+---
+
+## 🔧 Step B: Upload Snowflake Connector JARs
+
+### Purpose
+These JAR files enable Apache Spark to communicate with Snowflake, allowing seamless data reading and writing operations.
+
+### Required Dependencies
+
+#### 1. Spark-Snowflake Connector
+- **File**: `spark-snowflake_2.12-2.15.0-spark_3.4.jar`
+- **Version**: 2.15.0 (compiled for Scala 2.12, Spark 3.4)
+- **Purpose**: Provides Spark DataSource API implementation for Snowflake
+- **Download**: [Maven Repository](https://mvnrepository.com/artifact/net.snowflake/spark-snowflake)
+
+#### 2. Snowflake JDBC Driver
+- **File**: `snowflake-jdbc-3.16.0.jar`
+- **Version**: 3.16.0 (recommended: 3.14.4 for production)
+- **Purpose**: Underlying JDBC driver for database connectivity
+- **Download**: [Maven Repository](https://mvnrepository.com/artifact/net.snowflake/snowflake-jdbc)
+
+### Upload Commands
+
+```bash
+# Navigate to your local directory containing the JARs
+cd ~/downloads/snowflake-jars/
+
+# Upload Spark-Snowflake connector
+gsutil cp spark-snowflake_2.12-2.15.0-spark_3.4.jar \
+  gs://snowflake-projects--gds-de/snowflake_jars/
+
+# Upload Snowflake JDBC driver
+gsutil cp snowflake-jdbc-3.16.0.jar \
+  gs://snowflake-projects--gds-de/snowflake_jars/
+```
+
+### Verify Upload
+
+```bash
+# List files in the jars directory
+gsutil ls -lh gs://snowflake-projects--gds-de/snowflake_jars/
+
+# Expected output:
+# 42.5 MiB  spark-snowflake_2.12-2.15.0-spark_3.4.jar
+# 28.3 MiB  snowflake-jdbc-3.16.0.jar
+```
+
+### Important Notes
+- **Version Compatibility**: Ensure Spark version (3.4) matches your Dataproc cluster
+- **Scala Version**: The `2.12` in the JAR name must match your Spark's Scala version
+- **JDBC Warning**: The pipeline may warn about JDBC version mismatch (3.16.0 vs 3.14.4), but it will still work
+- **Security**: Store JARs in a restricted GCS bucket with appropriate IAM permissions
+
+---
+
+## 🚀 Step C: Upload PySpark Job Script
+
+### Purpose
+The PySpark job performs the core ETL transformations: reading raw JSON, validating data, calculating business metrics, joining with dimension tables, and loading the fact table into Snowflake.
+
+### Script Overview
+
+**File**: `spark_job.py`
+**Location**: `gs://snowflake-projects--gds-de/car_rental_spark_job/`
+
+### Key Functionalities
+
+1. **Data Ingestion**: Read daily JSON files from GCS
+2. **Data Validation**: Filter out records with missing mandatory fields
+3. **Business Transformations**:
+   - Calculate rental duration in days
+   - Compute total rental amount
+   - Calculate average daily rental rate
+   - Flag long-term rentals (> 7 days)
+4. **Dimension Lookups**: Join with dimension tables to get surrogate keys
+5. **Fact Table Load**: Write transformed data to Snowflake
+
+### Upload Process
+
+```bash
+# Navigate to your local directory
+cd ~/projects/car-rental-pipeline/
+
+# Upload the PySpark script
+gsutil cp spark_job.py \
+  gs://snowflake-projects--gds-de/car_rental_spark_job/
+
+# Verify upload
+gsutil cat gs://snowflake-projects--gds-de/car_rental_spark_job/spark_job.py | head -20
+```
+
+### Script Highlights
+
+**Snowflake Connection Configuration:**
+```python
+snowflake_options = {
+    "sfURL": "https://essbbdc-mi10939.snowflakecomputing.com",
+    "sfAccount": "ESSBBDC-MI10939",
+    "sfUser": os.environ.get("SNOWFLAKE_USER"),
+    "sfPassword": os.environ.get("SNOWFLAKE_PASSWORD"),
+    "sfDatabase": "car_rental",
+    "sfSchema": "PUBLIC",
+    "sfWarehouse": "COMPUTE_WH",
+    "sfRole": "ACCOUNTADMIN"
 }
 ```
 
-### **Customer Data Structure:**
-```csv
-customer_id,name,email,phone
-CUST001,John Smith,john.smith@email.com,+1-555-0101
-CUST002,Jane Doe,jane.doe@email.com,+1-555-0102
+**Business Transformations:**
+```python
+# Calculate rental duration and derived metrics
+transformed_df = validated_df \
+    .withColumn("rental_duration_days", 
+                datediff(col("rental_period.end_date"), 
+                        col("rental_period.start_date"))) \
+    .withColumn("total_rental_amount", 
+                col("amount") * col("quantity")) \
+    .withColumn("average_daily_rental_amount", 
+                round(col("total_rental_amount") / col("rental_duration_days"), 2)) \
+    .withColumn("is_long_rental", 
+                when(col("rental_duration_days") > 7, lit(1)).otherwise(lit(0)))
 ```
 
-## 🔍 Data Quality & Validation
+### Security Recommendations
 
-### **Validation Rules:**
-- **Mandatory Fields**: rental_id, customer_id, car details, dates, locations, amounts
-- **Data Types**: Proper type conversion and validation
-- **Business Rules**: Rental duration calculations, amount validations
-- **Referential Integrity**: Foreign key constraints in Snowflake
-
-### **Error Handling:**
-- **Airflow**: Retry logic with exponential backoff
-- **Spark**: Data validation with filtering of invalid records
-- **Snowflake**: Constraint validation and error logging
-
-## 📈 Analytics & Insights
-
-### **Key Metrics:**
-- **Revenue Analysis**: Total rental amounts by location, car type, time period
-- **Customer Behavior**: Rental patterns, duration analysis
-- **Operational Metrics**: Pickup/dropoff location analysis
-- **Performance KPIs**: Average daily rental amounts, long rental trends
-
-### **Sample Queries:**
-```sql
--- Revenue by location
-SELECT l.location_name, SUM(rf.total_rental_amount) as total_revenue
-FROM rentals_fact rf
-JOIN location_dim l ON rf.pickup_location_key = l.location_key
-GROUP BY l.location_name
-ORDER BY total_revenue DESC;
-
--- Customer rental patterns
-SELECT c.name, COUNT(*) as rental_count, AVG(rf.rental_duration_days) as avg_duration
-FROM rentals_fact rf
-JOIN customer_dim c ON rf.customer_key = c.customer_key
-WHERE c.is_current = TRUE
-GROUP BY c.name
-ORDER BY rental_count DESC;
+**Option 1: Use Environment Variables (via Dataproc job properties)**
+```python
+import os
+"sfUser": os.environ.get("SNOWFLAKE_USER"),
+"sfPassword": os.environ.get("SNOWFLAKE_PASSWORD"),
 ```
 
-## 🛠️ Configuration
+**Option 2: Use Google Secret Manager**
+```python
+from google.cloud import secretmanager
 
-### **Environment Variables:**
+def get_secret(secret_id, project_id):
+    client = secretmanager.SecretManagerServiceClient()
+    name = f"projects/{project_id}/secrets/{secret_id}/versions/latest"
+    response = client.access_secret_version(request={"name": name})
+    return response.payload.data.decode("UTF-8")
+
+"sfUser": get_secret("snowflake-user", "project-040088dd-8c9a-464e-96f"),
+"sfPassword": get_secret("snowflake-password", "project-040088dd-8c9a-464e-96f"),
+```
+
+### Testing the Script Locally (Optional)
+
 ```bash
-# Snowflake Configuration
-SNOWFLAKE_ACCOUNT=your-account
-SNOWFLAKE_USER=your-username
-SNOWFLAKE_PASSWORD=your-password
-SNOWFLAKE_DATABASE=car_rental
-SNOWFLAKE_WAREHOUSE=COMPUTE_WH
+# Install required packages
+pip install pyspark==3.4.0
 
-# GCP Configuration
-GCP_PROJECT_ID=your-project-id
-GCP_REGION=us-central1
-GCS_BUCKET=your-bucket-name
+# Run with sample data
+python spark_job.py --date=20260111
 ```
 
-### **Airflow Connections:**
-- **Snowflake Connection**: `snowflake_conn`
-- **GCP Connection**: `google_cloud_default`
-
-## 🔧 Troubleshooting
-
-### **Common Issues:**
-
-#### **1. Snowflake Connection Errors:**
-- Verify connection parameters
-- Check network access and firewall rules
-- Validate user permissions
-
-#### **2. GCS Access Issues:**
-- Verify service account permissions
-- Check bucket access policies
-- Validate storage integration setup
-
-#### **3. Spark Job Failures:**
-- Check Dataproc cluster status
-- Verify JAR file availability
-- Review Spark job logs
-
-#### **4. Data Quality Issues:**
-- Validate input data format
-- Check dimension table completeness
-- Review foreign key relationships
-
-## 📚 Learning Objectives
-
-This project demonstrates:
-
-1. **Batch Processing Patterns**: Daily data ingestion workflows
-2. **SCD Implementation**: Slowly Changing Dimension Type 2
-3. **Cloud Data Engineering**: GCP, Airflow, and Snowflake integration
-4. **Dimensional Modeling**: Star schema design and implementation
-5. **Data Validation**: Quality checks and error handling
-6. **Orchestration**: Workflow management with Airflow
-7. **Scalable Processing**: Spark-based data transformation
-
-## 🎯 Business Value
-
-- **Operational Efficiency**: Automated daily data processing
-- **Data Quality**: Comprehensive validation and error handling
-- **Scalability**: Cloud-native architecture for growth
-- **Analytics Ready**: Dimensional model for business intelligence
-- **Historical Tracking**: SCD2 for customer data evolution
-- **Cost Optimization**: Efficient resource utilization
-
-## 📞 Support
-mtousif2303@gmail.com
 ---
 
-**🔧 Built with:** Apache Airflow, Google Cloud Dataproc, Apache Spark, Snowflake, Python, SQL
+## 📊 Step D: Deploy Airflow DAG
 
-**📅 Last Updated:** September 2025
+### Purpose
+The Airflow DAG orchestrates the entire pipeline: resolving execution dates, performing SCD Type 2 updates on customer dimensions, and triggering the Spark job on Dataproc.
+
+### DAG Overview
+
+**File**: `car_rental_airflow_dag.py`
+**Location**: Airflow DAGs folder (typically `gs://[composer-bucket]/dags/`)
+
+### DAG Architecture
+
+```
+┌─────────────────────────────────────────────────────┐
+│              car_rental_data_pipeline               │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│  1. get_execution_date (PythonOperator)            │
+│     ↓                                               │
+│     • Resolve date from params or use ds_nodash    │
+│     • Store in XCom for downstream tasks           │
+│                                                     │
+│  2. merge_customer_dim (SQLExecuteQueryOperator)    │
+│     ↓                                               │
+│     • Close out changed customer records           │
+│     • Set end_date and is_current=FALSE            │
+│                                                     │
+│  3. insert_customer_dim (SQLExecuteQueryOperator)   │
+│     ↓                                               │
+│     • Insert new customer versions                 │
+│     • Set is_current=TRUE, end_date=NULL           │
+│                                                     │
+│  4. submit_pyspark_job (DataprocSubmitJobOperator)  │
+│     ↓                                               │
+│     • Submit Spark job to Dataproc cluster         │
+│     • Pass execution date as argument              │
+│     • Load fact table to Snowflake                 │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+```
+
+### Upload Process
+
+**For Cloud Composer:**
+```bash
+# Get your Composer environment's bucket
+export COMPOSER_BUCKET=$(gcloud composer environments describe \
+  car-rental-composer \
+  --location=us-central1 \
+  --format="get(config.dagGcsPrefix)")
+
+# Upload the DAG
+gsutil cp car_rental_airflow_dag.py ${COMPOSER_BUCKET}/
+
+# Verify upload
+gsutil ls ${COMPOSER_BUCKET}/*.py
+```
+
+**For Self-Managed Airflow:**
+```bash
+# Copy to Airflow DAGs folder
+cp car_rental_airflow_dag.py /opt/airflow/dags/
+
+# Or via GCS if using GKE
+gsutil cp car_rental_airflow_dag.py gs://your-airflow-bucket/dags/
+```
+
+### DAG Configuration
+
+**Key Parameters:**
+```python
+dag = DAG(
+    'car_rental_data_pipeline',
+    default_args=default_args,
+    description='Car Rental Data Pipeline',
+    schedule_interval=None,              # Manual trigger only
+    start_date=datetime(2025, 9, 3),
+    catchup=False,                       # Don't backfill
+    tags=['dev', 'car_rental'],
+    params={
+        'execution_date': Param(
+            default='NA',
+            type='string',
+            description='Execution date in YYYYMMDD format'
+        ),
+    }
+)
+```
+
+**Snowflake Connection Setup:**
+```python
+# In Airflow UI: Admin → Connections
+Connection ID: snowflake-connection
+Connection Type: Snowflake
+Account: ESSBBDC-MI10939
+Database: car_rental
+Schema: PUBLIC
+Warehouse: COMPUTE_WH
+Role: ACCOUNTADMIN
+```
+
+**Dataproc Configuration:**
+```python
+CLUSTER_NAME = 'hadoop-spark-cluster'
+PROJECT_ID = 'project-040088dd-8c9a-464e-96f'
+REGION = 'us-central1'
+
+PYSPARK_JOB = {
+    "reference": {"project_id": PROJECT_ID},
+    "placement": {"cluster_name": CLUSTER_NAME},
+    "pyspark_job": {
+        "main_python_file_uri": pyspark_job_file_path,
+        "args": ["--date={{ ti.xcom_pull(task_ids='get_execution_date') }}"],
+        "jar_file_uris": [
+            "gs://snowflake-projects--gds-de/snowflake_jars/spark-snowflake_2.12-2.15.0-spark_3.4.jar",
+            "gs://snowflake-projects--gds-de/snowflake_jars/snowflake-jdbc-3.16.0.jar"
+        ],
+        "properties": {
+            "spark.executorEnv.SNOWFLAKE_USER": "your_username",
+            "spark.executorEnv.SNOWFLAKE_PASSWORD": "your_password"
+        }
+    }
+}
+```
+
+### Testing the DAG
+
+**1. Validate DAG syntax:**
+```bash
+# SSH into Airflow scheduler
+airflow dags list | grep car_rental
+
+# Check for import errors
+airflow dags list-import-errors
+```
+
+**2. Test individual tasks:**
+```bash
+# Test date resolution
+airflow tasks test car_rental_data_pipeline get_execution_date 2026-01-11
+
+# Test Snowflake merge
+airflow tasks test car_rental_data_pipeline merge_customer_dim 2026-01-11
+
+# Test Snowflake insert
+airflow tasks test car_rental_data_pipeline insert_customer_dim 2026-01-11
+```
+
+**3. Trigger DAG manually:**
+- Navigate to Airflow UI: `http://[your-airflow-url]:8080`
+- Find `car_rental_data_pipeline`
+- Click "Trigger DAG" → Enter `execution_date` parameter → Trigger
+
+### Monitoring & Troubleshooting
+
+**Check Task Logs:**
+```bash
+# View task logs
+airflow tasks logs car_rental_data_pipeline submit_pyspark_job 2026-01-11 1
+
+# Monitor DAG run
+airflow dags state car_rental_data_pipeline 2026-01-11
+```
+
+**Common Issues:**
+
+1. **Snowflake Connection Error**
+   - Verify connection in Airflow UI
+   - Check warehouse is running
+   - Verify network connectivity (Cloud NAT)
+
+2. **XCom Pull Fails**
+   - Ensure `get_execution_date` task completed successfully
+   - Check XCom values in Airflow UI
+
+3. **Dataproc Job Timeout**
+   - Check cluster is running
+   - Verify JAR files exist in GCS
+   - Review Dataproc job logs in GCP Console
+
+---
+
+## 🎯 Step E: Verify Snowflake Results
+
+### Purpose
+Validate that the pipeline successfully loaded data into Snowflake, maintaining data quality and referential integrity.
+
+### Data Model
+
+**Star Schema Design:**
+```
+┌─────────────────┐
+│  CUSTOMER_DIM   │────┐
+│ (SCD Type 2)    │    │
+└─────────────────┘    │
+                       │
+┌─────────────────┐    │      ┌──────────────────┐
+│    CAR_DIM      │────┼──────│  RENTALS_FACT    │
+└─────────────────┘    │      └──────────────────┘
+                       │
+┌─────────────────┐    │
+│  LOCATION_DIM   │────┤
+└─────────────────┘    │
+                       │
+┌─────────────────┐    │
+│    DATE_DIM     │────┘
+└─────────────────┘
+```
+
+### Verification Queries
+
+**1. Check Customer Dimension (SCD Type 2):**
+```sql
+-- View current customer records
+SELECT 
+    customer_id,
+    name,
+    email,
+    phone,
+    effective_date,
+    end_date,
+    is_current
+FROM car_rental.PUBLIC.customer_dim
+WHERE is_current = TRUE
+ORDER BY customer_id;
+
+-- View customer history (all versions)
+SELECT 
+    customer_id,
+    name,
+    email,
+    effective_date,
+    end_date,
+    is_current
+FROM car_rental.PUBLIC.customer_dim
+WHERE customer_id = 'C1001'
+ORDER BY effective_date DESC;
+```
+
+**2. Check Rentals Fact Table:**
+```sql
+-- View recent rentals
+SELECT 
+    rental_id,
+    customer_key,
+    car_key,
+    pickup_location_key,
+    dropoff_location_key,
+    start_date_key,
+    end_date_key,
+    rental_duration_days,
+    total_rental_amount,
+    average_daily_rental_amount,
+    is_long_rental
+FROM car_rental.PUBLIC.rentals_fact
+ORDER BY start_date_key DESC
+LIMIT 100;
+
+-- Count records by date
+SELECT 
+    start_date_key,
+    COUNT(*) as rental_count,
+    SUM(total_rental_amount) as total_revenue
+FROM car_rental.PUBLIC.rentals_fact
+GROUP BY start_date_key
+ORDER BY start_date_key DESC;
+```
+
+**3. Data Quality Checks:**
+```sql
+-- Check for orphaned records (missing dimension keys)
+SELECT 
+    COUNT(*) as orphaned_records
+FROM car_rental.PUBLIC.rentals_fact
+WHERE customer_key IS NULL
+   OR car_key IS NULL
+   OR pickup_location_key IS NULL
+   OR dropoff_location_key IS NULL
+   OR start_date_key IS NULL
+   OR end_date_key IS NULL;
+
+-- Verify referential integrity
+SELECT 
+    'customer' as dimension,
+    COUNT(DISTINCT f.customer_key) as keys_in_fact,
+    COUNT(DISTINCT d.customer_key) as keys_in_dimension
+FROM car_rental.PUBLIC.rentals_fact f
+LEFT JOIN car_rental.PUBLIC.customer_dim d ON f.customer_key = d.customer_key
+
+UNION ALL
+
+SELECT 
+    'car',
+    COUNT(DISTINCT f.car_key),
+    COUNT(DISTINCT d.car_key)
+FROM car_rental.PUBLIC.rentals_fact f
+LEFT JOIN car_rental.PUBLIC.car_dim d ON f.car_key = d.car_key;
+```
+
+**4. Business Analytics Queries:**
+```sql
+-- Top 10 customers by revenue
+SELECT 
+    c.name,
+    c.email,
+    COUNT(f.rental_id) as total_rentals,
+    SUM(f.total_rental_amount) as total_revenue
+FROM car_rental.PUBLIC.rentals_fact f
+JOIN car_rental.PUBLIC.customer_dim c ON f.customer_key = c.customer_key
+WHERE c.is_current = TRUE
+GROUP BY c.name, c.email
+ORDER BY total_revenue DESC
+LIMIT 10;
+
+-- Most popular car models
+SELECT 
+    car.make,
+    car.model,
+    car.year,
+    COUNT(f.rental_id) as rental_count,
+    AVG(f.rental_duration_days) as avg_rental_days
+FROM car_rental.PUBLIC.rentals_fact f
+JOIN car_rental.PUBLIC.car_dim car ON f.car_key = car.car_key
+GROUP BY car.make, car.model, car.year
+ORDER BY rental_count DESC
+LIMIT 10;
+
+-- Revenue by location
+SELECT 
+    l.location_name as pickup_location,
+    COUNT(f.rental_id) as rental_count,
+    SUM(f.total_rental_amount) as total_revenue,
+    AVG(f.average_daily_rental_amount) as avg_daily_rate
+FROM car_rental.PUBLIC.rentals_fact f
+JOIN car_rental.PUBLIC.location_dim l ON f.pickup_location_key = l.location_key
+GROUP BY l.location_name
+ORDER BY total_revenue DESC;
+```
+
+### Expected Results
+
+**Customer Dimension Sample:**
+```
+CUSTOMER_ID | NAME          | EMAIL              | EFFECTIVE_DATE       | END_DATE  | IS_CURRENT
+------------|---------------|--------------------|--------------------- |-----------|------------
+C1001       | John Smith    | john@email.com     | 2026-01-11 09:45:00 | NULL      | TRUE
+C1002       | Jane Doe      | jane@email.com     | 2026-01-11 09:45:00 | NULL      | TRUE
+C1003       | Bob Johnson   | bob@email.com      | 2026-01-11 09:45:00 | NULL      | TRUE
+```
+
+**Rentals Fact Sample:**
+```
+RENTAL_ID    | CUSTOMER_KEY | CAR_KEY | DURATION_DAYS | TOTAL_AMOUNT | IS_LONG_RENTAL
+-------------|------------- |---------|---------------|--------------|---------------
+R20260111001 | 1001         | 2001    | 4             | 359.96       | 0
+R20260111002 | 1002         | 2002    | 7             | 559.93       | 0
+R20260111003 | 1003         | 2003    | 10            | 899.90       | 1
+```
+
+---
+
+## 🔧 Troubleshooting Common Issues
+
+### Issue 1: Snowflake Connection Timeout
+
+**Symptom:**
+```
+SnowflakeSQLException: JDBC driver encountered communication error
+Connect to essbbdc-mi10939.snowflakecomputing.com:443 failed: connect timed out
+```
+
+**Solution:**
+```bash
+# Enable Cloud NAT for Dataproc cluster
+gcloud compute routers create dataproc-nat-router \
+    --network=default \
+    --region=us-central1
+
+gcloud compute routers nats create dataproc-nat-config \
+    --router=dataproc-nat-router \
+    --region=us-central1 \
+    --nat-all-subnet-ip-ranges \
+    --auto-allocate-nat-external-ips
+
+# Verify connectivity
+gcloud compute ssh hadoop-spark-cluster-m --zone=us-central1-c
+curl -v https://essbbdc-mi10939.snowflakecomputing.com:443
+```
+
+### Issue 2: File Format Not Found
+
+**Symptom:**
+```
+SQL compilation error: File format 'CSV_FORMAT' does not exist or not authorized
+```
+
+**Solution:**
+```sql
+-- Add schema context in SQL
+USE DATABASE car_rental;
+USE SCHEMA PUBLIC;
+
+-- Or use fully qualified name
+FILE_FORMAT => car_rental.PUBLIC.CSV_FORMAT
+```
+
+### Issue 3: XCom Pull Returns None
+
+**Symptom:**
+Task fails with `NoneType object has no attribute`
+
+**Solution:**
+```python
+# Ensure upstream task pushes to XCom
+def get_execution_date(ds_nodash, **kwargs):
+    execution_date = kwargs['params'].get('execution_date', 'NA')
+    if execution_date == 'NA':
+        execution_date = ds_nodash
+    return execution_date  # This is automatically pushed to XCom
+
+# Check task dependencies
+get_execution_date_task >> merge_customer_dim
+```
+
+---
+
+## 🎓 Best Practices & Recommendations
+
+### Data Quality
+1. **Implement Data Validation**: Add data quality checks before loading
+2. **Idempotency**: Ensure pipeline can be re-run safely
+3. **Monitoring**: Set up alerts for failed tasks
+4. **Logging**: Maintain detailed logs for troubleshooting
+
+### Security
+1. **Use Secret Manager**: Never hardcode credentials
+2. **IAM Roles**: Use service accounts with minimal permissions
+3. **Network Security**: Use VPC Service Controls and Private Service Connect
+4. **Encryption**: Enable encryption at rest and in transit
+
+### Performance
+1. **Partition Data**: Use date-based partitioning in GCS
+2. **Optimize Spark**: Tune executor memory and cores
+3. **Snowflake Optimization**: Use clustering keys on fact table
+4. **Incremental Loading**: Process only new/changed data
+
+### Scalability
+1. **Horizontal Scaling**: Increase Dataproc worker nodes
+2. **Auto-scaling**: Enable Dataproc autoscaling
+3. **Warehouse Sizing**: Scale Snowflake warehouse for peak loads
+4. **Connection Pooling**: Implement connection pooling for Snowflake
+
+---
+
+## 📈 Monitoring & Observability
+
+### Airflow Monitoring
+- DAG run duration
+- Task failure rates
+- SLA misses
+- Resource utilization
+
+### Dataproc Monitoring
+- Job execution time
+- Shuffle spill
+- GC time
+- Memory pressure
+
+### Snowflake Monitoring
+```sql
+-- Query performance
+SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY
+WHERE DATABASE_NAME = 'CAR_RENTAL'
+ORDER BY START_TIME DESC
+LIMIT 100;
+
+-- Table storage
+SELECT 
+    TABLE_NAME,
+    ROW_COUNT,
+    BYTES / (1024*1024*1024) as SIZE_GB
+FROM SNOWFLAKE.ACCOUNT_USAGE.TABLE_STORAGE_METRICS
+WHERE TABLE_SCHEMA = 'PUBLIC'
+ORDER BY BYTES DESC;
+```
+
+---
+
+## 🚀 Next Steps
+
+1. **Automate Scheduling**: Change `schedule_interval` from `None` to `@daily`
+2. **Add Data Quality Tests**: Implement Great Expectations or dbt tests
+3. **Build Dashboards**: Connect Tableau/PowerBI to Snowflake
+4. **Implement CI/CD**: Use GitHub Actions for DAG deployment
+5. **Add Incremental Processing**: Optimize to process only changed data
+6. **Setup Alerting**: Configure PagerDuty/Slack for fa
