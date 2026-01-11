@@ -1,0 +1,2 @@
+spark-snowflake_2.12-2.15.0-spark_3.4.jar
+snowflake-jdbc-3.16.0.jar
