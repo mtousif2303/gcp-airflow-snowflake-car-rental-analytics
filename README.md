@@ -2,9 +2,7 @@
 
 End-to-end data pipeline built with Apache Airflow, Apache Spark (GCP Dataproc), and Snowflake. Processes daily car rental transactions, implements SCD Type 2 for historical tracking, and creates analytics-ready dimensional models for business intelligence.
 
-# 🚗 Car Rental Batch Ingestion
-
-## 📋 Project Overview
+## 🚗 Car Rental Batch Ingestion
 
 This project demonstrates a comprehensive **batch data processing pipeline** for car rental analytics using **Apache Airflow**, **Google Cloud Dataproc**, **Apache Spark**, and **Snowflake**. The pipeline processes daily car rent
 
